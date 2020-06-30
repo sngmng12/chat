@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>햇빛</title>
+    <style media="screen">
+      .chat_log{width:95%; height: 200px;}
+      .name{width: 10%;}
+      .message{width: 70%}
+      .chat{ width: 10%;}
+      .textarea{width:80%; height: 400px; overflow-y:scroll; padding: 25px;}
+      .box{width:80%;}
+      .textarea{display: flex; flex-direction: column; background-color: rgb(178,199,218);}
+      .msgBox{border: 0px solid; border-radius:10px; padding : 9px 12px; margin:7px; background-color:rgb(253,236,51); display:inline-block ;}
+      .msgline{}
+      #alertMsg{color:rgb(110,113,116); text-align:center}
+      .otherMsgBox{border: 0px solid; border-radius:10px; padding : 9px 12px; margin:7px; background-color:rgb(255,255,255); display:inline-block ;}
+      #otherMsgLine{}
+
+    </style>
+  </head>
+  <body>
+
+  <div id="textarea" class = "textarea">
+
+  </div>
+  <div div class="box">
+    <form id="chat">
+      <input id = "name" class = "name"type="text">
+      <input id = "message" class = "message" type = "text">
+      <input type = "submit" class = "chat" value = "입력" id = "chat">
+      <input type = "color" id = "chatColor" value = "#000000" onchange="nameColor()">
+    </form>
+  </div>
+      <script src="/socket.io/socket.io.js" charset="utf-8"></script>
+      <script src="http://code.jquery.com/jquery-1.11.1.js" charset="utf-8"></script>
+      <script>
+        let socket = io();
+        let msgCount = 0;
+        let isMine = false;
+
+        function nameColor(){
+          $('#name').css("color", $('#chatColor').val());
+        }
+
+        $('#chat').on('submit',function(e){
+
+           isMine = true;
+            msgCount ++;
+            $("#textarea").append("<div class= msgLine>" + "<div class= msgBox id= msgBox" +msgCount +">" + $('#message').val() +"</div></div>");
+            $('.msgLine').css("text-align","right");
+            $('#msgBox'+ msgCount).css({color:$('#chatColor').val()});
+
+
+            document.getElementById("textarea").scrollTop = document.getElementById("textarea").scrollHeight;
+
+          socket.emit('send message', $('#name').val(), $('#message').val(), $('#chatColor').val());
+          $('#message').val("");
+
+          e.preventDefault();
+
+        });
+
+        socket.on('receive message', function(text, col, name, origin_name){
+
+          if(name !== origin_name){
+
+            $("#textarea").append( "<p id = alertMsg >"+ origin_name + " 님이 " + name + "으로 변경하였습니다."+"</p>");
+
+          }
+          if(!isMine){
+            msgCount ++;
+            $("#textarea").append( "<div class= otherMsgLine>" + name  +"<div class= otherMsgBox id= otherMsgBox" +msgCount +">" + text +"</div></div>");
+            $('#otherMsgBox'+msgCount).css("color",col);
+            document.getElementById("textarea").scrollTop = document.getElementById("textarea").scrollHeight;
+          }
+          isMine = false;
+        });
+
+        socket.on('init name', function(name){
+          $("#textarea").append( "<p id = alertMsg>"+ name + "님이 입장하였습니다.</p>");
+          $('#name').val(name);
+        });
+        </script>
+  </body>
+</html>
